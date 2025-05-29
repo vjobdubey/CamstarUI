@@ -1,0 +1,212 @@
+ <div class="calendar-container">
+      <div class="calendar-header">
+        <div class="month-navigation">
+          <button mat-icon-button (click)="navigate('prev')">
+            <fa-icon [icon]="faChevronLeft"></fa-icon>
+          </button>
+          <h2>{{ getHeaderText() }}</h2>
+          <button mat-icon-button (click)="navigate('next')">
+            <fa-icon [icon]="faChevronRight"></fa-icon>
+          </button>
+        </div>
+        
+        <div class="view-controls">
+          <div class="view-toggles">
+            <mat-button-toggle-group [(ngModel)]="currentView" (change)="onViewChange()">
+              <mat-button-toggle value="month">
+                <fa-icon [icon]="faCalendarAlt"></fa-icon>
+                Month
+              </mat-button-toggle>
+              <mat-button-toggle value="week">
+                <fa-icon [icon]="faCalendarWeek"></fa-icon>
+                Week
+              </mat-button-toggle>
+              <mat-button-toggle value="day">
+                <fa-icon [icon]="faCalendarDay"></fa-icon>
+                Day
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
+          <div class="select-wrapper">
+            <fa-icon [icon]="faFilter" class="select-icon"></fa-icon>
+            <mat-select [(ngModel)]="selectedActionType" (selectionChange)="filterEvents()">
+              <mat-option value="all">All CA Types</mat-option>
+              <mat-option *ngFor="let type of actionTypes" [value]="type">
+                {{ type }}
+              </mat-option>
+            </mat-select>
+          </div>
+          
+          <button mat-button (click)="goToToday()">
+            <fa-icon [icon]="faCalendarDay"></fa-icon>
+            Today
+          </button>
+        </div>
+      </div>
+
+      <!-- Month View -->
+      <div *ngIf="currentView === 'month'" class="calendar-grid">
+        <div class="weekday-header">
+          <div *ngFor="let day of weekDays" class="weekday">{{ day }}</div>
+        </div>
+        
+        <div class="days-grid">
+          <div *ngFor="let week of weeks" class="week">
+            <div *ngFor="let day of week" 
+                 class="day" 
+                 [class.other-month]="!day.isCurrentMonth"
+                 [class.today]="isToday(day.date)"
+                 [class.selected]="isSelectedDate(day.date)"
+                 (click)="selectDate(day)">
+              <div class="day-header">
+                <span class="day-number">{{ format(day.date, 'd') }}</span>
+                <span *ngIf="day.events.length > 0" class="event-count">
+                  {{ day.events.length }}
+                </span>
+              </div>
+              <div class="events-container custom-scrollbar">
+                <div *ngFor="let event of day.events" 
+                     class="event"
+                     [class.urgent]="event.isUrgent">
+                  <span class="event-dot"></span>
+                  <span class="event-title">{{ event.company }}</span>
+                  <span class="event-type">{{ event.actionType }}</span>
+                  <fa-icon *ngIf="event.isUrgent" 
+                          [icon]="faExclamationTriangle" 
+                          class="urgent-icon">
+                  </fa-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Week View -->
+      <div *ngIf="currentView === 'week'" class="week-view">
+        <div class="week-header">
+          <div class="time-column"></div>
+          <div *ngFor="let day of currentWeekDays" 
+               class="day-column-header"
+               [class.today]="isToday(day)"
+               [class.selected]="isSelectedDate(day)">
+            <div class="day-name">{{ format(day, 'EEE') }}</div>
+            <div class="day-number">{{ format(day, 'd') }}</div>
+            <div class="event-count" *ngIf="getEventsForDate(day).length">
+              {{ getEventsForDate(day).length }} events
+            </div>
+          </div>
+        </div>
+        
+        <div class="week-body">
+          <div class="time-slots">
+            <div *ngFor="let hour of timeSlots" class="time-slot">
+              {{ format(hour.time, 'HH:mm') }}
+            </div>
+          </div>
+          <div *ngFor="let day of currentWeekDays" 
+               class="day-column"
+               [class.today]="isToday(day)"
+               [class.selected]="isSelectedDate(day)"
+               (click)="selectDate({ date: day, events: getEventsForDate(day), isCurrentMonth: true })">
+            <div *ngFor="let event of getEventsForDate(day)" 
+                 class="week-event"
+                 [class.urgent]="event.isUrgent">
+              <span class="event-time">{{ format(event.announcementDate, 'HH:mm') }}</span>
+              <span class="event-title">{{ event.company }}</span>
+              <span class="event-type">{{ event.actionType }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Day View -->
+      <div *ngIf="currentView === 'day'" class="day-view">
+        <div class="day-view-header">
+          <h3>{{ format(currentDate, 'EEEE, MMMM d, yyyy') }}</h3>
+          <div class="event-count" *ngIf="getDayEvents().length">
+            {{ getDayEvents().length }} events
+          </div>
+        </div>
+        
+        <div class="day-timeline">
+          <div *ngFor="let slot of getDayTimeSlots()" class="time-slot">
+            <div class="time-label">{{ format(slot.time, 'HH:mm') }}</div>
+            <div class="events-container">
+              <div *ngFor="let event of slot.events" 
+                   class="day-event"
+                   [class.urgent]="event.isUrgent">
+                <div class="event-content">
+                  <div class="event-title">{{ event.company }}</div>
+                  <div class="event-type">{{ event.actionType }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="events-summary">
+        <div class="summary-item">
+          <fa-icon [icon]="faCalendarDay" class="summary-icon"></fa-icon>
+          <span class="count">{{ todayEvents.length }}</span>
+          <span class="label">Today's Events</span>
+        </div>
+        <div class="summary-item">
+          <fa-icon [icon]="faExclamationTriangle" class="summary-icon urgent"></fa-icon>
+          <span class="count">{{ urgentEvents.length }}</span>
+          <span class="label">Urgent Events</span>
+        </div>
+        <div class="summary-item">
+          <fa-icon [icon]="faCalendarWeek" class="summary-icon"></fa-icon>
+          <span class="count">{{ upcomingEvents.length }}</span>
+          <span class="label">Upcoming Events</span>
+        </div>
+      </div>
+
+      <!-- Selected Date Events Details -->
+      <div *ngIf="selectedDay && selectedDay.events.length > 0" class="selected-date-events">
+        <h3>Events for {{ format(selectedDay.date, 'MMMM d, yyyy') }}</h3>
+        <div class="events-grid">
+          <div *ngFor="let event of selectedDay.events" class="event-card" [class.urgent]="event.isUrgent">
+            <div class="event-card-header">
+              <h4>{{ event.company }}</h4>
+              <span class="event-type-badge">{{ event.actionType }}</span>
+            </div>
+            <div class="event-card-content">
+              <div class="event-detail">
+                <span class="label">Customer:</span>
+                <span class="value">{{ event.customer }}</span>
+              </div>
+              <div class="event-detail">
+                <span class="label">Business Line:</span>
+                <span class="value">{{ event.businessLine }}</span>
+              </div>
+              <div class="event-detail">
+                <span class="label">Position Size:</span>
+                <span class="value">{{ event.positionSize }}</span>
+              </div>
+              <div class="event-detail">
+                <span class="label">Entitled Position:</span>
+                <span class="value">{{ event.entitledPosition }}</span>
+              </div>
+              <div class="event-detail">
+                <span class="label">Election Quantity:</span>
+                <span class="value">{{ event.electionQuantity }}</span>
+              </div>
+              <div class="event-detail">
+                <span class="label">Election Price:</span>
+                <span class="value">\${{ event.electionPrice }}</span>
+              </div>
+              <div class="event-detail">
+                <span class="label">Status:</span>
+                <span class="value status-badge" [class]="event.status.toLowerCase()">
+                  {{ event.status }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>

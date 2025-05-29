@@ -1,0 +1,92 @@
+<div class="grid-container">
+  <div class="grid-header">
+    <h2>Corporate Actions</h2>
+    <div class="grid-actions">
+      <button (click)="exportToCsv()" class="btn">Export CSV</button>
+      <button (click)="openColumnVisibilityMenu()" class="btn">
+        Manage Columns
+      </button>
+      <button (click)="resetFilters()" class="btn">Reset</button>
+      <button (click)="clearSelection()" class="btn">Clear Selection</button>
+      <input
+        (input)="onFilterTextBoxChanged($event)"
+        type="text"
+        placeholder="Search..."
+        class="search-input"
+      />
+    </div>
+  </div>
+
+  <!-- Column Visibility Menu -->
+  <div *ngIf="showColumnMenu" class="column-menu">
+    <div class="column-menu-header">
+      <h3>Manage Columns</h3>
+      <button (click)="showColumnMenu = false" class="close-btn">
+        &times;
+      </button>
+    </div>
+    <div class="column-menu-content">
+      <!-- <div *ngFor="let col of columnDefs" class="column-option">
+            <label>
+              <input 
+                type="checkbox" 
+                [checked]="!col.hide" 
+                (change)="toggleColumn(col)"
+              />
+              {{ col.headerName }}
+            </label>
+          </div> -->
+      <div *ngFor="let column of columnGroups">
+        <div class="group-header" (click)="toggleGroup(column)">
+          <span>{{ column.label }}</span>
+          <mat-icon>{{
+            column.collapsed ? "expand_more" : "expand_less"
+          }}</mat-icon>
+        </div>
+
+        @if(!column.collapsed){
+        <div class="column-option">
+            <label *ngFor="let item of column.columns">
+              <input
+                type="checkbox"
+                [checked]="item.hide"
+                (change)="toggleColumn(item)"
+              />{{ item.headerName }}</label
+            >
+          </div>
+        }
+      </div>
+    </div>
+    <!-- <div class="column-menu-footer">
+      <button (click)="selectAllColumns(true)" class="btn">Select All</button>
+      <button (click)="selectAllColumns(false)" class="btn">
+        Deselect All
+      </button>
+    </div> -->
+  </div>
+
+  @if(columnDefs.length){
+  <ag-grid-angular
+    #agGrid
+    class="ag-theme-alpine"
+    [rowData]="rowData"
+    [columnDefs]="columnDefs"
+    [defaultColDef]="defaultColDef"
+    [pagination]="true"
+    [paginationPageSize]="10"
+    [paginationPageSizeSelector]="[10, 25, 50, 100]"
+    [rowSelection]="'multiple'"
+    [animateRows]="true"
+    [sideBar]="sideBar"
+    (gridReady)="onGridReady($event)"
+    (selectionChanged)="onSelectionChanged()"
+    domLayout="autoHeight"
+    style="width: 100%"
+  >
+  </ag-grid-angular>
+  }
+
+  <div *ngIf="selectedRows.length > 0" class="selection-info">
+    Selected: {{ selectedRows.length }} row(s)
+  </div>
+</div>
