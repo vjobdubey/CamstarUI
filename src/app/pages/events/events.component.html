@@ -1,139 +1,254 @@
- <div class="events-container">
-      <div class="events-header">
-        <h1>Events</h1>
-        <div class="header-actions">
-          <div class="search-box">
-            <mat-form-field appearance="outline">
-              <mat-label>Search in all columns...</mat-label>
-              <input matInput [(ngModel)]="searchText" (ngModelChange)="applyFilters()">
-              <fa-icon [icon]="faSearch" matSuffix></fa-icon>
-            </mat-form-field>
-          </div>
-          <button mat-stroked-button (click)="toggleFilters()">
-            <fa-icon [icon]="faFilter"></fa-icon>
-            Filters
-          </button>
-          <button mat-stroked-button (click)="resetFilters()">
-            <fa-icon [icon]="faRotate"></fa-icon>
-            Reset
-          </button>
+<div class="events-container">
+  <div class="events-header">
+    <h1>Events</h1>
+    <div class="header-actions">
+      <div class="search-box">
+        <mat-form-field appearance="outline">
+          <mat-label>Search in all columns...</mat-label>
+          <input
+            matInput
+            [(ngModel)]="searchText"
+            (ngModelChange)="applyFilters()"
+          />
+          <fa-icon [icon]="faSearch" matSuffix></fa-icon>
+        </mat-form-field>
+      </div>
+      <button mat-stroked-button (click)="toggleFilters()">
+        <fa-icon [icon]="faFilter"></fa-icon>
+        Filters
+      </button>
+      <button mat-stroked-button (click)="resetFilters()">
+        <fa-icon [icon]="faRotate"></fa-icon>
+        Reset
+      </button>
+    </div>
+  </div>
+
+  <div class="filters-section" *ngIf="showFilters">
+    <div class="filters-header">
+      <fa-icon [icon]="faFilter"></fa-icon>
+      <h3>Filters</h3>
+    </div>
+    <p class="filter-hint">Add conditions to filter the data</p>
+
+    <div
+      class="filter-row"
+      *ngFor="let condition of filterConditions; let i = index"
+    >
+      <mat-form-field>
+        <mat-label>Group</mat-label>
+        <mat-select
+          [(ngModel)]="condition.group"
+          (ngModelChange)="applyFilters()"
+        >
+          @for (item of groupFilter; track $index) {
+          <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Field</mat-label>
+        <mat-select
+          [(ngModel)]="condition.field"
+          (ngModelChange)="applyFilters()"
+        >
+          @for (item of fieldFilter; track $index) {
+          <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Operator</mat-label>
+        <mat-select
+          [(ngModel)]="condition.operator"
+          (ngModelChange)="applyFilters()"
+        >
+          @for (item of operatorFilter; track $index) {
+          <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Value</mat-label>
+        <input
+          matInput
+          [(ngModel)]="condition.value"
+          (ngModelChange)="applyFilters()"
+        />
+      </mat-form-field>
+
+      <button mat-icon-button color="warn" (click)="removeFilter(i)">
+        <fa-icon [icon]="faTrash"></fa-icon>
+      </button>
+    </div>
+
+    <button mat-stroked-button color="primary" (click)="addFilter()">
+      <fa-icon [icon]="faPlus"></fa-icon>
+      Add Filter
+    </button>
+  </div>
+
+  <div class="events-list">
+    <div
+      class="event-item"
+      *ngFor="let event of filteredEvents"
+      [class.expanded]="expandedEventId === event.EventID"
+    >
+      <div class="event-summary" (click)="toggleEventDetails(event.EventID)">
+        <div class="event-main">
+          <fa-icon
+            [icon]="
+              expandedEventId === event.EventID ? faChevronDown : faChevronRight
+            "
+            class="expand-icon"
+          ></fa-icon>
+          <span class="company-name">{{ event.StockName }}</span>
+          <span class="event-type">{{ event.CAType }}</span>
+          <span class="urgent-badge" *ngIf="event.isUrgent">Urgent</span>
+        </div>
+        <div class="event-meta">
+          <span class="event-date">{{ formatDate(event.Date1) }}</span>
+          <span class="status-badge" [class]="event.status.toLowerCase()">{{
+            event.status
+          }}</span>
         </div>
       </div>
 
-      <div class="filters-section" *ngIf="showFilters">
-        <div class="filters-header">
-          <fa-icon [icon]="faFilter"></fa-icon>
-          <h3>Filters</h3>
-        </div>
-        <p class="filter-hint">Add conditions to filter the data</p>
-        
-        <div class="filter-row" *ngFor="let condition of filterConditions; let i = index">
-          <mat-form-field>
-            <mat-label>Group</mat-label>
-            <mat-select [(ngModel)]="condition.group" (ngModelChange)="applyFilters()">
-              <mat-option value="events">Events</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field>
-            <mat-label>Field</mat-label>
-            <mat-select [(ngModel)]="condition.field" (ngModelChange)="applyFilters()">
-              <mat-option value="actionType">Action Type</mat-option>
-              <mat-option value="company">Company</mat-option>
-              <mat-option value="status">Status</mat-option>
-              <mat-option value="customer">Customer</mat-option>
-              <mat-option value="businessLine">Business Line</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field>
-            <mat-label>Operator</mat-label>
-            <mat-select [(ngModel)]="condition.operator" (ngModelChange)="applyFilters()">
-              <mat-option value="contains">Contains</mat-option>
-              <mat-option value="equals">Equals</mat-option>
-              <mat-option value="startsWith">Starts with</mat-option>
-              <mat-option value="endsWith">Ends with</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field>
-            <mat-label>Value</mat-label>
-            <input matInput [(ngModel)]="condition.value" (ngModelChange)="applyFilters()">
-          </mat-form-field>
-
-          <button mat-icon-button color="warn" (click)="removeFilter(i)">
-            <fa-icon [icon]="faTrash"></fa-icon>
-          </button>
-        </div>
-
-        <button mat-stroked-button color="primary" (click)="addFilter()">
-          <fa-icon [icon]="faPlus"></fa-icon>
-          Add Filter
-        </button>
-      </div>
-
-      <div class="events-list">
-        <div class="event-item" *ngFor="let event of filteredEvents" [class.expanded]="expandedEventId === event.id">
-          <div class="event-summary" (click)="toggleEventDetails(event.id)">
-            <div class="event-main">
-              <fa-icon [icon]="expandedEventId === event.id ? faChevronDown : faChevronRight" class="expand-icon"></fa-icon>
-              <span class="company-name">{{ event.company }}</span>
-              <span class="event-type">{{ event.actionType }}</span>
-              <span class="urgent-badge" *ngIf="event.isUrgent">Urgent</span>
+      <div class="event-details" *ngIf="expandedEventId === event.EventID">
+        <div class="container">
+          <div class="event-header">
+            <div>
+              <div class="label">Event</div>
+              <div class="value">{{ event.StockName }}</div>
             </div>
-            <div class="event-meta">
-              <span class="event-date">{{ formatDate(event.announcementDate) }}</span>
-              <span class="status-badge" [class]="event.status.toLowerCase()">{{ event.status }}</span>
+            <div>
+              <div class="label">Security</div>
+              <div class="value">{{ event.CAType }}</div>
+            </div>
+            <div>
+              <div class="label">Deadline</div>
+              <div class="value">{{ event.CADeadline }}</div>
+            </div>
+            <div>
+              <div class="label">Position</div>
+              <div class="value">{{ event.status }}</div>
             </div>
           </div>
-          
-          <div class="event-details" *ngIf="expandedEventId === event.id">
-            <div class="details-grid">
-              <div class="detail-group">
-                <h4>Company Information</h4>
-                <div class="detail-item">
-                  <span class="label">Customer:</span>
-                  <span class="value">{{ event.customer }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="label">Business Line:</span>
-                  <span class="value">{{ event.businessLine }}</span>
-                </div>
+
+          <h4>SBL Breakdown Table</h4>
+          <table>
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Client Position</th>
+                <th>Decision</th>
+                <th>Elected Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Mr. A</td>
+                <td>100</td>
+                <td>Yes</td>
+                <td>50</td>
+              </tr>
+              <tr>
+                <td>Mr. B</td>
+                <td>50</td>
+                <td>No</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>Mr. C</td>
+                <td>80</td>
+                <td>Yes</td>
+                <td>80</td>
+              </tr>
+              <tr>
+                <td>Total Client Position:</td>
+                <td>230</td>
+                <td></td>
+                <td>130</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="container-bottom">
+            <div class="summary-section">
+              <div class="summary-left">
+                <p>Trader Position (Borrowed): <span>-330</span></p>
+                <p>Unt Exposure after Client Elections: <span>-200</span></p>
+                <p>Uncovered Risk (Trader liable for): <span>-200</span></p>
               </div>
-              
-              <div class="detail-group">
-                <h4>Position Details</h4>
-                <div class="detail-item">
-                  <span class="label">Position Size:</span>
-                  <span class="value">{{ event.positionSize }}</span>
+              <div class="summary-right">⚠️ Flag: Partial Client Response</div>
+            </div>
+
+            <div class="action-bar">
+              <button
+                class="btn btn-primary"
+                (click)="openAuroraPortal(eventDetails.link)"
+              >
+                Input Election (Trader)
+              </button>
+              <button
+                class="btn btn-outline"
+                (click)="openCloseComment(event.EventID)"
+              >
+                ✏️ Edit Comment
+              </button>
+              <button
+                class="btn"
+                [ngClass]="
+                  eventDetails.urgentFlag ? 'btn-danger' : 'btn-secondary'
+                "
+                (click)="
+                  removeAaddUrgentFlag(event.EventID, eventDetails.urgentFlag)
+                "
+              >
+                🚩 {{ eventDetails.urgentFlag ? "Remove" : "Add" }} Urgent Flag
+              </button>
+            </div>
+
+            @if(openCommentBox){
+            <div class="chat-container">
+              <div class="messages" #messagesContainer>
+                @for (msg of eventDetails.messages; track $index) {
+                <div
+                  [ngClass]="{
+                    'message sent': msg.isSent,
+                    'message received': !msg.isSent
+                  }"
+                >
+                  {{ msg.text }}
+                  <div class="timestamp">
+                    {{ msg.dateTime | date : "shortTime" }}
+                  </div>
                 </div>
-                <div class="detail-item">
-                  <span class="label">Entitled Position:</span>
-                  <span class="value">{{ event.entitledPosition }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="label">Election Quantity:</span>
-                  <span class="value">{{ event.electionQuantity }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="label">Election Price:</span>
-                  <span class="value">{{ event.electionPrice }}</span>
-                </div>
+                }
               </div>
-              
-              <div class="detail-group">
-                <h4>Important Dates</h4>
-                <div class="detail-item">
-                  <span class="label">Record Date:</span>
-                  <span class="value">{{ formatDate(event.recordDate) }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="label">Payment Date:</span>
-                  <span class="value">{{ formatDate(event.paymentDate) }}</span>
-                </div>
+
+              <div class="input-area">
+                <textarea
+                  placeholder="Type Something..."
+                  [(ngModel)]="newMessage"
+                ></textarea>
+                <button
+                  class="btn-cancel"
+                  (click)="cancelMessage(event.EventID)"
+                >
+                  Cancel
+                </button>
+                <button class="btn-send" (click)="sendMessage(event.EventID)">
+                  Send
+                </button>
               </div>
             </div>
+            }
           </div>
         </div>
       </div>
     </div>
+  </div>
+</div>

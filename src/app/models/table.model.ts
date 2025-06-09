@@ -1,4 +1,4 @@
-import { ColDef } from "ag-grid-community";
+import { ColDef } from 'ag-grid-community';
 
 export interface CorporateAction1 {
   EventID: string;
@@ -21,7 +21,7 @@ export interface CorporateAction1 {
   PostingStatus: string;
   TraderComment: string;
   LastSeenOrUpdatedBy: string;
-  LastAction: string
+  LastAction: string;
 }
 
 export interface CorporateAction {
@@ -40,9 +40,23 @@ export interface CorporateAction {
   electionQuantity?: number;
   electionPrice?: number;
   isUrgent?: boolean;
-
 }
 
+export interface CorporateActionEvent {
+  EventID: number;
+  SEDOL: string;
+  StockName: string;
+  CAType: string;
+  CADeadline: string;
+  Date1: string;
+  Date2: string;
+  isUrgent: boolean;
+  status: string;
+}
+
+export interface CorporateActionEventDetails {
+
+}
 
 export interface Column {
   id: string;
@@ -51,7 +65,7 @@ export interface Column {
   hide: boolean;
   sortable?: boolean;
   width?: string;
-  filter?:string;
+  filter?: string;
   // render?: (value: any, row: CorporateAction1) => React.ReactNode;
 }
 
@@ -59,5 +73,5 @@ export interface ColumnGroup {
   id: string;
   label: string;
   columns: ColDef[];
-  collapsed:boolean;
+  collapsed: boolean;
 }
