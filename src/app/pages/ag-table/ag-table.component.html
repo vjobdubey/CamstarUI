@@ -6,16 +6,82 @@
       <button (click)="openColumnVisibilityMenu()" class="btn">
         Manage Columns
       </button>
-      <button (click)="resetFilters()" class="btn">Reset</button>
-      <button (click)="clearSelection()" class="btn">Clear Selection</button>
+      <button mat-stroked-button (click)="toggleFilters()">
+        <fa-icon [icon]="faFilter"></fa-icon>
+        Filters
+      </button>
+      <!-- <button (click)="clearSelection()" class="btn">Clear Selection</button> -->
       <input
         (input)="onFilterTextBoxChanged($event)"
         type="text"
         placeholder="Search..."
         class="search-input"
       />
+      <button (click)="resetFilters()" class="btn">Reset</button>
     </div>
   </div>
+
+   <!-- <div class="filters-section" *ngIf="showFilters">
+    <div class="filters-header">
+      <fa-icon [icon]="faFilter"></fa-icon>
+      <h3>Filters</h3>
+    </div>
+    <p class="filter-hint">Add conditions to filter the data</p>
+
+    <div
+      class="filter-row"
+      *ngFor="let condition of filterConditions; let i = index"
+    >
+      <mat-form-field>
+        <mat-label>Group</mat-label>
+        <mat-select
+          [(ngModel)]="condition.group"
+          (ngModelChange)="applyFilters()"
+        >
+          @for (item of groupFilter; track $index) {
+          <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Field</mat-label>
+        <mat-select
+          [(ngModel)]="condition.field"
+          (ngModelChange)="applyFilters()"
+        >
+          @for (item of fieldFilter; track $index) {
+          <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Operator</mat-label>
+        <mat-select
+          [(ngModel)]="condition.operator"
+          (ngModelChange)="applyFilters()"
+        >
+          @for (item of operatorFilter; track $index) {
+          <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Value</mat-label>
+        <input
+          matInput
+          [(ngModel)]="condition.value"
+          (ngModelChange)="applyFilters()"
+        />
+      </mat-form-field>
+
+      <button mat-icon-button color="warn" (click)="removeFilter(i)">
+        <fa-icon [icon]="faTrash"></fa-icon>
+      </button>
+    </div>
+    </div> -->
 
   <!-- Column Visibility Menu -->
   <div *ngIf="showColumnMenu" class="column-menu">

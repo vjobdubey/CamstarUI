@@ -7,74 +7,80 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { 
-  faChevronLeft, 
-  faChevronRight, 
-  faCalendarDay, 
+import {
+  faChevronLeft,
+  faChevronRight,
+  faCalendarDay,
   faExclamationTriangle,
   faCalendarWeek,
   faFilter,
-  faCalendarAlt
+  faCalendarAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import { TableDataService } from '../../services/table-data.service';
-import { CorporateAction } from '../../models/table.model';
-import { 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  eachDayOfInterval, 
-  startOfWeek, 
+import { CorporateAction, CorporateAction1 } from '../../models/table.model';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  startOfWeek,
   endOfWeek,
   addDays,
   startOfDay,
   endOfDay,
   isSameDay,
   eachHourOfInterval,
-  parseISO
+  parseISO,
 } from 'date-fns';
+import { ApiDataService } from '../../services/api-data-service';
 
 type ViewType = 'month' | 'week' | 'day';
 
 interface CalendarDay {
   date: Date;
-  events: CorporateAction[];
+  events: CorporateAction1[];
   isCurrentMonth: boolean;
+  open?: number;
+  closed?: number;
+  urgent?: number;
 }
 
 interface TimeSlot {
   time: Date;
-  events: CorporateAction[];
+  events: CorporateAction1[];
 }
 
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [ CommonModule,
+  imports: [
+    CommonModule,
     MatCardModule,
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
     MatButtonToggleModule,
     FormsModule,
-    FontAwesomeModule],
+    FontAwesomeModule,
+  ],
   templateUrl: './calendar.component.html',
-  styleUrl: './calendar.component.scss'
+  styleUrl: './calendar.component.scss',
 })
 export class CalendarComponent implements OnInit {
- currentDate = new Date();
+  currentDate = new Date();
   currentView: ViewType = 'month';
   weeks: CalendarDay[][] = [];
   weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  events: CorporateAction[] = [];
+  events: CorporateAction1[] = [];
   actionTypes: string[] = [];
   selectedActionType = 'all';
   selectedDay: CalendarDay | null = null;
   currentWeekDays: Date[] = [];
   timeSlots: { time: Date }[] = [];
-  
-  todayEvents: CorporateAction[] = [];
-  urgentEvents: CorporateAction[] = [];
-  upcomingEvents: CorporateAction[] = [];
+
+  todayEvents: CorporateAction1[] = [];
+  urgentEvents: CorporateAction1[] = [];
+  upcomingEvents: CorporateAction1[] = [];
 
   // Font Awesome icons
   faChevronLeft = faChevronLeft;
@@ -85,18 +91,44 @@ export class CalendarComponent implements OnInit {
   faFilter = faFilter;
   faCalendarAlt = faCalendarAlt;
 
-  constructor(private dataService: TableDataService) {}
+  constructor(
+    private dataService: TableDataService,
+    private apiDataService: ApiDataService
+  ) {}
 
   ngOnInit() {
-    this.loadEvents();
+    // this.loadEvents();
+    this.fetchData();
   }
 
-  loadEvents() {
-    this.dataService.getCorporateActions().subscribe(actions => {
-      this.events = actions;
-      this.actionTypes = [...new Set(actions.map(action => action.actionType))];
-      this.generateCalendarData();
-      this.updateEventSummaries();
+  // loadEvents() {
+  //   this.dataService.getCorporateActions().subscribe(actions => {
+  //     this.events = actions;
+  //     this.actionTypes = [...new Set(actions.map(action => action.actionType))];
+  //     this.generateCalendarData();
+  //     this.updateEventSummaries();
+  //   });
+  // }
+
+  private fetchData(): void {
+    this.apiDataService.get<CorporateAction1[]>('ca/election').subscribe({
+      next: (data: CorporateAction1[]) => {
+        let newData = data.map((e: CorporateAction1, number: number) => {
+          return {
+            ...e,
+            id: number + 1,
+          };
+        });
+        // this.rowData = newData;
+        this.events = newData;
+        this.actionTypes = [...new Set(newData.map((action) => action.CAType))];
+        this.generateCalendarData();
+        this.updateEventSummaries();
+      },
+      error: (err) => {
+        console.error('API Error:', err);
+        alert(err.message); // Customize as needed
+      },
     });
   }
 
@@ -117,22 +149,37 @@ export class CalendarComponent implements OnInit {
   generateMonthView() {
     const start = startOfMonth(this.currentDate);
     const end = endOfMonth(this.currentDate);
-    const days = eachDayOfInterval({ start: startOfWeek(start), end: endOfWeek(end) });
+    const days = eachDayOfInterval({
+      start: startOfWeek(start),
+      end: endOfWeek(end),
+    });
 
     this.weeks = [];
     let currentWeek: CalendarDay[] = [];
 
-    days.forEach(date => {
+    days.forEach((date) => {
       if (currentWeek.length === 7) {
         this.weeks.push(currentWeek);
         currentWeek = [];
       }
 
       const dayEvents = this.getEventsForDate(date);
+      const open = dayEvents.filter(
+        (e: CorporateAction1) =>
+          e.ElectionStatus.toLocaleLowerCase() === 'n/a'
+      ).length;
+      const closed = dayEvents.filter(
+        (e: CorporateAction1) =>
+          e.ElectionStatus.toLocaleLowerCase() === 'completed' ||
+          (e.ElectionStatus.toLocaleLowerCase() === 'Submitted')
+      ).length;
       currentWeek.push({
         date,
         events: dayEvents,
-        isCurrentMonth: date.getMonth() === this.currentDate.getMonth()
+        isCurrentMonth: date.getMonth() === this.currentDate.getMonth(),
+        open,
+        closed,
+        urgent : dayEvents.length - (open + closed),
       });
     });
 
@@ -143,63 +190,74 @@ export class CalendarComponent implements OnInit {
 
   generateWeekView() {
     const weekStart = startOfWeek(this.currentDate);
-    this.currentWeekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-    
+    this.currentWeekDays = Array.from({ length: 7 }, (_, i) =>
+      addDays(weekStart, i)
+    );
+
     const dayStart = startOfDay(this.currentDate);
     this.timeSlots = Array.from({ length: 24 }, (_, i) => ({
-      time: addDays(dayStart, i)
+      time: addDays(dayStart, i),
     }));
   }
 
   generateDayView() {
     const dayStart = startOfDay(this.currentDate);
     const dayEnd = endOfDay(this.currentDate);
-    this.timeSlots = eachHourOfInterval({ start: dayStart, end: dayEnd }).map(time => ({
-      time,
-      events: this.getEventsForHour(time)
-    }));
+    this.timeSlots = eachHourOfInterval({ start: dayStart, end: dayEnd }).map(
+      (time) => ({
+        time,
+        events: this.getEventsForHour(time),
+      })
+    );
   }
 
-  getEventsForHour(time: Date): CorporateAction[] {
-    return this.events.filter(event => {
-      const eventDate = new Date(event.announcementDate);
-      return eventDate.getHours() === time.getHours() &&
-             isSameDay(eventDate, this.currentDate) &&
-             (this.selectedActionType === 'all' || event.actionType === this.selectedActionType);
+  getEventsForHour(time: Date): CorporateAction1[] {
+    return this.events.filter((event) => {
+      const eventDate = new Date(event.Date1);
+      return (
+        eventDate.getHours() === time.getHours() &&
+        isSameDay(eventDate, this.currentDate) &&
+        (this.selectedActionType === 'all' ||
+          event.CAType === this.selectedActionType)
+      );
     });
   }
 
-  getDayEvents(): CorporateAction[] {
+  getDayEvents(): CorporateAction1[] {
     return this.getEventsForDate(this.currentDate);
   }
 
   getDayTimeSlots(): TimeSlot[] {
     const dayStart = startOfDay(this.currentDate);
     const dayEnd = endOfDay(this.currentDate);
-    return eachHourOfInterval({ start: dayStart, end: dayEnd }).map(time => ({
+    return eachHourOfInterval({ start: dayStart, end: dayEnd }).map((time) => ({
       time,
-      events: this.getEventsForHour(time)
+      events: this.getEventsForHour(time),
     }));
   }
 
-  getEventsForDate(date: Date): CorporateAction[] {
-    return this.events.filter(event => {
-      const eventDate = new Date(event.announcementDate);
-      return isSameDay(eventDate, date) &&
-             (this.selectedActionType === 'all' || event.actionType === this.selectedActionType);
+  getEventsForDate(date: Date): CorporateAction1[] {
+    return this.events.filter((event) => {
+      const eventDate = new Date(event.Date1);
+      return (
+        isSameDay(eventDate, date) &&
+        (this.selectedActionType === 'all' ||
+          event.CAType === this.selectedActionType)
+      );
     });
   }
+  
 
   updateEventSummaries() {
     const today = new Date();
-    this.todayEvents = this.events.filter(event => 
-      isSameDay(new Date(event.announcementDate), today)
+    this.todayEvents = this.events.filter((event) =>
+      isSameDay(new Date(event.Date1), today)
     );
-    
-    this.urgentEvents = this.events.filter(event => event.isUrgent);
-    
-    this.upcomingEvents = this.events.filter(event => 
-      new Date(event.announcementDate) > today
+
+    this.urgentEvents = this.events.filter((event) => event?.isUrgent);
+
+    this.upcomingEvents = this.events.filter(
+      (event) => new Date(event.Date1) > today
     );
   }
 
@@ -210,7 +268,10 @@ export class CalendarComponent implements OnInit {
       case 'week':
         const weekStart = startOfWeek(this.currentDate);
         const weekEnd = endOfWeek(this.currentDate);
-        return `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+        return `${format(weekStart, 'MMM d')} - ${format(
+          weekEnd,
+          'MMM d, yyyy'
+        )}`;
       case 'day':
         return format(this.currentDate, 'EEEE, MMMM d, yyyy');
       default:
@@ -220,10 +281,13 @@ export class CalendarComponent implements OnInit {
 
   navigate(direction: 'prev' | 'next') {
     const amount = direction === 'prev' ? -1 : 1;
-    
+
     switch (this.currentView) {
       case 'month':
-        this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + amount);
+        this.currentDate = new Date(
+          this.currentDate.getFullYear(),
+          this.currentDate.getMonth() + amount
+        );
         break;
       case 'week':
         this.currentDate = addDays(this.currentDate, amount * 7);
@@ -232,7 +296,7 @@ export class CalendarComponent implements OnInit {
         this.currentDate = addDays(this.currentDate, amount);
         break;
     }
-    
+
     this.generateCalendarData();
     this.selectedDay = null;
   }

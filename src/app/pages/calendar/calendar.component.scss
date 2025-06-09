@@ -361,9 +361,9 @@
 
     .events-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 16px;
-      max-height: 400px;
+      // grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      // gap: 16px;
+      // max-height: 400px;
       overflow-y: auto;
       padding-right: 8px;
     }
@@ -438,4 +438,110 @@
     .status-badge.active {
       background: #e3f2fd;
       color: #1976d2;
+    }
+
+    .red{
+      background-color: #e07070;
+    }
+    .green{
+      background-color: #53da5c;
+    }
+    
+    .blue{
+      background-color: #5c9ee0;
+    }
+    
+    
+    .event-wrapper {
+      // max-width: 1000px;
+      margin: auto;
+    }
+
+    // .event-title {
+    //   font-size: 22px;
+    //   font-weight: bold;
+    //   margin: 10px;
+    // }
+
+    .event-card {
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .event-left,
+    .event-right {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .event-heading {
+      font-size: 18px;
+      // font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .event-subtitle {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 12px;
+    }
+
+    .event-field {
+      font-size: 13px;
+      margin: 4px 0;
+      color: #444;
+    }
+
+    .event-field strong {
+      display: block;
+      // font-weight: 600;
+      color: #000;
+    }
+
+    .event-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      // font-weight: 500;
+      color: #fff;
+    }
+
+    .status-inprogress {
+      background-color: #3b82f6;
+    }
+
+    .status-completed {
+      background-color: #bbf7d0;
+      color: #065f46;
+    }
+
+    .status-failed {
+      background-color: #dbeafe;
+      color: #1e40af;
+    }
+
+    .event-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .event-btn:hover {
+      background-color: #f1f5f9;
     }

@@ -22,6 +22,7 @@ export interface CorporateAction1 {
   TraderComment: string;
   LastSeenOrUpdatedBy: string;
   LastAction: string;
+  isUrgent?: boolean;
 }
 
 export interface CorporateAction {
@@ -41,6 +42,7 @@ export interface CorporateAction {
   electionPrice?: number;
   isUrgent?: boolean;
 }
+
 
 export interface CorporateActionEvent {
   EventID: number;

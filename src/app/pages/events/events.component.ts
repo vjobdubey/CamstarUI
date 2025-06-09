@@ -285,29 +285,29 @@ export class EventsComponent implements OnInit {
     }
 
     // Apply filter conditions
-    // this.filterConditions.forEach((condition) => {
-    //   if (condition.value) {
-    //     filtered = filtered.filter((event) => {
-    //       const fieldValue = String(
-    //         event[condition.field as keyof CorporateAction] || ''
-    //       ).toLowerCase();
-    //       const filterValue = condition.value.toLowerCase();
+    this.filterConditions.forEach((condition) => {
+      if (condition.value) {
+        filtered = filtered.filter((event) => {
+          const fieldValue = String(
+            event[condition.field as keyof CorporateActionEvent] || ''
+          ).toLowerCase();
+          const filterValue = condition.value.toLowerCase();
 
-    //       switch (condition.operator) {
-    //         case 'contains':
-    //           return fieldValue.includes(filterValue);
-    //         case 'equals':
-    //           return fieldValue === filterValue;
-    //         case 'startsWith':
-    //           return fieldValue.startsWith(filterValue);
-    //         case 'endsWith':
-    //           return fieldValue.endsWith(filterValue);
-    //         default:
-    //           return true;
-    //       }
-    //     });
-    //   }
-    // });
+          switch (condition.operator) {
+            case 'contains':
+              return fieldValue.includes(filterValue);
+            case 'equals':
+              return fieldValue === filterValue;
+            case 'startsWith':
+              return fieldValue.startsWith(filterValue);
+            case 'endsWith':
+              return fieldValue.endsWith(filterValue);
+            default:
+              return true;
+          }
+        });
+      }
+    });
 
     this.filteredEvents = filtered;
   }

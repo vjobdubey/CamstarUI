@@ -9,24 +9,44 @@ import { ApiDataService } from '../../services/api-data-service';
 import { HttpClientModule } from '@angular/common/http';
 import { columnDefs, columnGroups } from '../../utils/tableConfig';
 import { MatIconModule } from '@angular/material/icon';
+import { faFilter } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatInputModule } from '@angular/material/input';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 @Component({
   selector: 'app-ag-table',
   standalone: true,
-  imports: [CommonModule, AgGridModule, HttpClientModule,MatIconModule],
+  imports: [
+    CommonModule,
+    AgGridModule,
+    HttpClientModule,
+    MatIconModule,
+    FontAwesomeModule,
+    MatCardModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+  ],
   providers: [ApiDataService],
   templateUrl: './ag-table.component.html',
   styleUrl: './ag-table.component.scss',
-  
 })
 export class AgTableComponent implements OnInit {
   @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
+  // FontAwesome icons
+  faFilter = faFilter;
 
   private gridApi!: GridApi;
   public rowData: any[] = []; //CorporateAction
   public selectedRows: any[] = [];
   public showColumnMenu = false;
+  protected showFilters = false;
 
   public sideBar = {
     toolPanels: [
@@ -66,7 +86,7 @@ export class AgTableComponent implements OnInit {
   }
 
   columnInit(): void {
-    let newColumnDef:ColDef[] = [];
+    let newColumnDef: ColDef[] = [];
     columnGroups.forEach((e: ColumnGroup) => {
       e.columns.forEach((e: ColDef) => {
         newColumnDef.push({
@@ -79,7 +99,7 @@ export class AgTableComponent implements OnInit {
         });
       });
     });
-    this.columnDefs = newColumnDef
+    this.columnDefs = newColumnDef;
   }
 
   fetchData(): void {
@@ -133,11 +153,11 @@ export class AgTableComponent implements OnInit {
 
   toggleColumn(col: ColDef): void {
     col.hide = !col.hide;
-   this.columnDefs = this.columnDefs.map((column) => {
-     return{
-      ...column,
-      hide :col.field == column.field ? !col.hide : column.hide
-     }
+    this.columnDefs = this.columnDefs.map((column) => {
+      return {
+        ...column,
+        hide: col.field == column.field ? !col.hide : column.hide,
+      };
     });
     this.gridApi.setGridOption('columnDefs', this.columnDefs);
   }
@@ -162,5 +182,9 @@ export class AgTableComponent implements OnInit {
 
   toggleGroup(column: any): void {
     column.collapsed = !column.collapsed;
+  }
+
+    toggleFilters() {
+    this.showFilters = !this.showFilters;
   }
 }
