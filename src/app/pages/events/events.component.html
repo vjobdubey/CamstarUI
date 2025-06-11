@@ -13,14 +13,34 @@
           <fa-icon [icon]="faSearch" matSuffix></fa-icon>
         </mat-form-field>
       </div>
-      <button mat-stroked-button (click)="toggleFilters()">
+     <button
+        mat-stroked-button
+        (click)="toggleFilters()"
+        ngClass="{{ showFilters && 'bg-light-blue' }}"
+      >
         <fa-icon [icon]="faFilter"></fa-icon>
         Filters
+        <span *ngIf="appliedCondition.length">{{
+          appliedCondition.length
+        }}</span>
+      </button>
+      <button
+        mat-stroked-button
+        (click)="togglePreset()"
+        ngClass="{{ showPresets && 'bg-light-blue' }}"
+      >
+        <fa-icon [icon]="faBookmark"></fa-icon>
+        Preset
       </button>
       <button mat-stroked-button (click)="resetFilters()">
         <fa-icon [icon]="faRotate"></fa-icon>
         Reset
       </button>
+      @if (role === "trader") {
+      <mat-slide-toggle [(ngModel)]="showAllEvents" (change)="showEventList($event)">
+        Show All Events
+      </mat-slide-toggle>
+      }
     </div>
   </div>
 
@@ -30,16 +50,23 @@
       <h3>Filters</h3>
     </div>
     <p class="filter-hint">Add conditions to filter the data</p>
+@if (appliedCondition.length) {
+    <div class="active-filters">Active Filters:</div>
 
+    @for (item of appliedCondition; track $index) {
+    <div class="filter-chip" (click)="addSelectedFilter($index)">
+      <b>{{ item.field }}</b> {{ item.operator }}
+      <span>"{{ item.value }}"</span>
+      <span class="close-btn" (click)="removeFilter($index)">&times;</span>
+    </div>
+    } }
     <div
       class="filter-row"
-      *ngFor="let condition of filterConditions; let i = index"
     >
       <mat-form-field>
         <mat-label>Group</mat-label>
         <mat-select
-          [(ngModel)]="condition.group"
-          (ngModelChange)="applyFilters()"
+          [(ngModel)]="filterConditions.group"
         >
           @for (item of groupFilter; track $index) {
           <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
@@ -50,8 +77,7 @@
       <mat-form-field>
         <mat-label>Field</mat-label>
         <mat-select
-          [(ngModel)]="condition.field"
-          (ngModelChange)="applyFilters()"
+          [(ngModel)]="filterConditions.field"
         >
           @for (item of fieldFilter; track $index) {
           <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
@@ -62,8 +88,7 @@
       <mat-form-field>
         <mat-label>Operator</mat-label>
         <mat-select
-          [(ngModel)]="condition.operator"
-          (ngModelChange)="applyFilters()"
+          [(ngModel)]="filterConditions.operator"
         >
           @for (item of operatorFilter; track $index) {
           <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
@@ -75,22 +100,17 @@
         <mat-label>Value</mat-label>
         <input
           matInput
-          [(ngModel)]="condition.value"
-          (ngModelChange)="applyFilters()"
+          [(ngModel)]="filterConditions.value"
         />
       </mat-form-field>
 
-      <button mat-icon-button color="warn" (click)="removeFilter(i)">
-        <fa-icon [icon]="faTrash"></fa-icon>
-      </button>
-    </div>
-
-    <button mat-stroked-button color="primary" (click)="addFilter()">
+    <button mat-stroked-button color="primary" (click)="applyFilters()">
       <fa-icon [icon]="faPlus"></fa-icon>
       Add Filter
     </button>
   </div>
-
+  </div>
+ <div class="flex">
   <div class="events-list">
     <div
       class="event-item"
@@ -251,4 +271,57 @@
       </div>
     </div>
   </div>
+  @if (showPresets) {
+    <div>
+      <mat-card class="filter-card">
+        <mat-card-title>Filter Presets</mat-card-title>
+        <mat-card-subtitle
+          >Save and apply filter combinations</mat-card-subtitle
+        >
+
+        @for (preset of presets; track $index){
+        <div class="filter-item">
+          <div class="filter-info">
+            <div class="preset-name">{{ preset.name }}</div>
+            <div class="preset-sub">1 filters</div>
+          </div>
+          <div class="filter-actions">
+            <button mat-icon-button color="primary" (click)="selectPresetFilter($index)">
+              <mat-icon>check</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deletePreset($index)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+        }
+        <!-- Save preset input form shown conditionally -->
+        <div class="save-form" *ngIf="showSaveInput">
+          <mat-form-field appearance="fill" class="preset-input">
+            <input
+              matInput
+              placeholder="Preset name..."
+              [(ngModel)]="newPresetName"
+            />
+          </mat-form-field>
+          <button disabled="{{!newPresetName}}" mat-raised-button color="primary" (click)="savePreset()">
+            <mat-icon>save</mat-icon>&nbsp;Save
+          </button>
+          <button mat-button color="warn" (click)="cancelSave()">Cancel</button>
+        </div>
+
+        <!-- Save Filter button to toggle the input -->
+        <button
+          mat-stroked-button
+          color="primary"
+          class="save-btn"
+          *ngIf="!showSaveInput"
+          (click)="showSaveInput = true"
+          disabled="{{!appliedCondition.length}}"
+        >
+          Save Current Filters
+        </button>
+      </mat-card>
+    </div>
+    }</div>
 </div>

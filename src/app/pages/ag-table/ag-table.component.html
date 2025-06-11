@@ -6,9 +6,24 @@
       <button (click)="openColumnVisibilityMenu()" class="btn">
         Manage Columns
       </button>
-      <button mat-stroked-button (click)="toggleFilters()">
+      <button
+        mat-stroked-button
+        (click)="toggleFilters()"
+        ngClass="{{ showFilters && 'bg-light-blue' }}"
+      >
         <fa-icon [icon]="faFilter"></fa-icon>
         Filters
+        <span *ngIf="appliedCondition.length">{{
+          appliedCondition.length
+        }}</span>
+      </button>
+      <button
+        mat-stroked-button
+        (click)="togglePreset()"
+        ngClass="{{ showPresets && 'bg-light-blue' }}"
+      >
+        <fa-icon [icon]="faBookmark"></fa-icon>
+        Preset
       </button>
       <!-- <button (click)="clearSelection()" class="btn">Clear Selection</button> -->
       <input
@@ -16,27 +31,35 @@
         type="text"
         placeholder="Search..."
         class="search-input"
+        [(ngModel)]="searchText"
       />
       <button (click)="resetFilters()" class="btn">Reset</button>
     </div>
   </div>
 
-   <!-- <div class="filters-section" *ngIf="showFilters">
+  <div class="filters-section" *ngIf="showFilters">
     <div class="filters-header">
       <fa-icon [icon]="faFilter"></fa-icon>
       <h3>Filters</h3>
     </div>
     <p class="filter-hint">Add conditions to filter the data</p>
 
-    <div
-      class="filter-row"
-      *ngFor="let condition of filterConditions; let i = index"
-    >
+    @if (appliedCondition.length) {
+    <div class="active-filters">Active Filters:</div>
+
+    @for (item of appliedCondition; track $index) {
+    <div class="filter-chip" (click)="addSelectedFilter($index)">
+      <b>{{ item.field }}</b> {{ item.operator }}
+      <span>"{{ item.value }}"</span>
+      <span class="close-btn" (click)="removeFilter($index)">&times;</span>
+    </div>
+    } }
+
+    <div class="filter-row">
       <mat-form-field>
         <mat-label>Group</mat-label>
         <mat-select
-          [(ngModel)]="condition.group"
-          (ngModelChange)="applyFilters()"
+          [(ngModel)]="filterConditions.group"
         >
           @for (item of groupFilter; track $index) {
           <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
@@ -46,10 +69,7 @@
 
       <mat-form-field>
         <mat-label>Field</mat-label>
-        <mat-select
-          [(ngModel)]="condition.field"
-          (ngModelChange)="applyFilters()"
-        >
+        <mat-select [(ngModel)]="filterConditions.field">
           @for (item of fieldFilter; track $index) {
           <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
           }
@@ -58,10 +78,7 @@
 
       <mat-form-field>
         <mat-label>Operator</mat-label>
-        <mat-select
-          [(ngModel)]="condition.operator"
-          (ngModelChange)="applyFilters()"
-        >
+        <mat-select [(ngModel)]="filterConditions.operator">
           @for (item of operatorFilter; track $index) {
           <mat-option value="{{ item.value }}">{{ item.label }}</mat-option>
           }
@@ -70,18 +87,14 @@
 
       <mat-form-field>
         <mat-label>Value</mat-label>
-        <input
-          matInput
-          [(ngModel)]="condition.value"
-          (ngModelChange)="applyFilters()"
-        />
+        <input matInput [(ngModel)]="filterConditions.value" />
       </mat-form-field>
-
-      <button mat-icon-button color="warn" (click)="removeFilter(i)">
-        <fa-icon [icon]="faTrash"></fa-icon>
+      <button mat-stroked-button color="primary" (click)="applyFilters()">
+        <fa-icon [icon]="faPlus"></fa-icon>
+        Apply Filter
       </button>
     </div>
-    </div> -->
+  </div>
 
   <!-- Column Visibility Menu -->
   <div *ngIf="showColumnMenu" class="column-menu">
@@ -92,16 +105,6 @@
       </button>
     </div>
     <div class="column-menu-content">
-      <!-- <div *ngFor="let col of columnDefs" class="column-option">
-            <label>
-              <input 
-                type="checkbox" 
-                [checked]="!col.hide" 
-                (change)="toggleColumn(col)"
-              />
-              {{ col.headerName }}
-            </label>
-          </div> -->
       <div *ngFor="let column of columnGroups">
         <div class="group-header" (click)="toggleGroup(column)">
           <span>{{ column.label }}</span>
@@ -112,14 +115,14 @@
 
         @if(!column.collapsed){
         <div class="column-option">
-            <label *ngFor="let item of column.columns">
-              <input
-                type="checkbox"
-                [checked]="item.hide"
-                (change)="toggleColumn(item)"
-              />{{ item.headerName }}</label
-            >
-          </div>
+          <label *ngFor="let item of column.columns">
+            <input
+              type="checkbox"
+              [checked]="item.hide"
+              (change)="toggleColumn(item)"
+            />{{ item.headerName }}</label
+          >
+        </div>
         }
       </div>
     </div>
@@ -131,26 +134,80 @@
     </div> -->
   </div>
 
-  @if(columnDefs.length){
-  <ag-grid-angular
-    #agGrid
-    class="ag-theme-alpine"
-    [rowData]="rowData"
-    [columnDefs]="columnDefs"
-    [defaultColDef]="defaultColDef"
-    [pagination]="true"
-    [paginationPageSize]="10"
-    [paginationPageSizeSelector]="[10, 25, 50, 100]"
-    [rowSelection]="'multiple'"
-    [animateRows]="true"
-    [sideBar]="sideBar"
-    (gridReady)="onGridReady($event)"
-    (selectionChanged)="onSelectionChanged()"
-    domLayout="autoHeight"
-    style="width: 100%"
-  >
-  </ag-grid-angular>
-  }
+  <div class="flex">
+    @if(columnDefs.length){
+    <ag-grid-angular
+      #agGrid
+      class="ag-theme-alpine"
+      [rowData]="filteredrowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [pagination]="true"
+      [paginationPageSize]="10"
+      [paginationPageSizeSelector]="[10, 25, 50, 100]"
+      [rowSelection]="'multiple'"
+      [animateRows]="true"
+      [sideBar]="sideBar"
+      (gridReady)="onGridReady($event)"
+      (selectionChanged)="onSelectionChanged()"
+      domLayout="autoHeight"
+      style="width: 100%"
+    >
+    </ag-grid-angular>
+    } @if (showPresets) {
+    <div>
+      <mat-card class="filter-card">
+        <mat-card-title>Filter Presets</mat-card-title>
+        <mat-card-subtitle
+          >Save and apply filter combinations</mat-card-subtitle
+        >
+
+        @for (preset of presets; track $index){
+        <div class="filter-item">
+          <div class="filter-info">
+            <div class="preset-name">{{ preset.name }}</div>
+            <div class="preset-sub">1 filters</div>
+          </div>
+          <div class="filter-actions">
+            <button mat-icon-button color="primary" (click)="selectPresetFilter($index)">
+              <mat-icon>check</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deletePreset($index)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+        }
+        <!-- Save preset input form shown conditionally -->
+        <div class="save-form" *ngIf="showSaveInput">
+          <mat-form-field appearance="fill" class="preset-input">
+            <input
+              matInput
+              placeholder="Preset name..."
+              [(ngModel)]="newPresetName"
+            />
+          </mat-form-field>
+          <button disabled="{{!newPresetName}}" mat-raised-button color="primary" (click)="savePreset()">
+            <mat-icon>save</mat-icon>&nbsp;Save
+          </button>
+          <button mat-button color="warn" (click)="cancelSave()">Cancel</button>
+        </div>
+
+        <!-- Save Filter button to toggle the input -->
+        <button
+          mat-stroked-button
+          color="primary"
+          class="save-btn"
+          *ngIf="!showSaveInput"
+          (click)="showSaveInput = true"
+          disabled="{{!appliedCondition.length}}"
+        >
+          Save Current Filters
+        </button>
+      </mat-card>
+    </div>
+    }
+  </div>
 
   <div *ngIf="selectedRows.length > 0" class="selection-info">
     Selected: {{ selectedRows.length }} row(s)

@@ -402,3 +402,79 @@
    background-color: #ef4444;
    color: #fff;
  }
+
+ .flex{
+  display: flex;
+ }
+ .bg-light-blue {
+  background-color: #a5bfde;
+}
+
+.filter-card {
+  width: 300px;
+  padding: 16px;
+  margin: 20px;
+}
+
+.filter-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.filter-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.preset-name {
+  font-weight: 500;
+}
+
+.preset-sub {
+  font-size: 12px;
+  color: #888;
+}
+
+.filter-actions button {
+  margin-left: 4px;
+}
+
+.save-btn {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  background-color: #f1f6ff;
+  color: #2a4fb8;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-size: 13px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.filter-chip b {
+  margin-right: 4px;
+  color: #2a4fb8;
+}
+
+.filter-chip span {
+  margin: 0 2px;
+  color: #333;
+}
+
+.close-btn {
+  cursor: pointer;
+  margin-left: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  color: #2a4fb8;
+  text-decoration: none;
+}
