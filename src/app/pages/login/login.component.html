@@ -1,0 +1,32 @@
+<div class="login-wrapper">
+  <mat-card class="login-card">
+    <mat-card-title>Login</mat-card-title>
+    <mat-card-content>
+      <form (ngSubmit)="onLogin()" #loginForm="ngForm">
+        <mat-form-field appearance="fill" class="full-width">
+          <mat-label>Username</mat-label>
+          <input matInput [(ngModel)]="username" name="username" required />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="full-width">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" [(ngModel)]="password" name="password" required />
+        </mat-form-field>
+
+        <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+        <button mat-raised-button color="primary" class="full-width">Login</button>
+      </form>
+    </mat-card-content>
+    <div>
+        <h5>Ops Login</h5>
+        <div>Username : <b>Op</b></div>
+        <div>Password : <b>123</b></div>
+    </div>
+    <div>
+        <h5>Trader Login</h5>
+        <div>Username : <b>trader</b></div>
+        <div>Password : <b>123</b></div>
+    </div>
+  </mat-card>
+</div>

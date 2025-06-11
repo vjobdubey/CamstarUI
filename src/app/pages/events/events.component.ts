@@ -22,6 +22,7 @@ import {
   faExclamationTriangle,
   faChevronRight,
   faChevronDown,
+  faBookmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { TableDataService } from '../../services/table-data.service';
 import {
@@ -29,6 +30,11 @@ import {
   CorporateActionEvent,
 } from '../../models/table.model';
 import { ApiDataService } from '../../services/api-data-service';
+import {
+  MatSlideToggleChange,
+  MatSlideToggleModule,
+} from '@angular/material/slide-toggle';
+import { AuthService } from '../../auth/auth.service';
 
 interface FilterCondition {
   group: string;
@@ -49,6 +55,7 @@ interface FilterCondition {
     MatSelectModule,
     FormsModule,
     FontAwesomeModule,
+    MatSlideToggleModule,
   ],
   templateUrl: './events.component.html',
   styleUrl: './events.component.scss',
@@ -70,41 +77,56 @@ export class EventsComponent implements OnInit {
   faExclamationTriangle = faExclamationTriangle;
   faChevronRight = faChevronRight;
   faChevronDown = faChevronDown;
+  faBookmark = faBookmark;
 
-  events: CorporateActionEvent[] = [];
-  filteredEvents: CorporateActionEvent[] = [];
-  searchText = '';
-  showFilters = false;
-  expandedEventId: number | null = null;
-  filterConditions: FilterCondition[] = [
-    { group: 'events', field: 'EventID', operator: 'Equals', value: '' },
-  ];
-  eventDetails: any = [];
-  openCommentBox: boolean = false;
-  newMessage: string = '';
-  groupFilter: { label: string; value: string }[] = [
+  protected events: CorporateActionEvent[] = [];
+  protected filteredEvents: CorporateActionEvent[] = [];
+  protected appliedCondition: FilterCondition[] = [];
+  protected searchText = '';
+  protected showFilters = false;
+  protected expandedEventId: number | null = null;
+  protected filterConditions: FilterCondition = {
+    group: 'events',
+    field: 'EventID',
+    operator: 'Equals',
+    value: '',
+  };
+
+  protected eventDetails: any = [];
+  protected openCommentBox: boolean = false;
+  protected showAllEvents: boolean = true;
+  protected newMessage: string = '';
+  protected groupFilter: { label: string; value: string }[] = [
     { label: 'Events', value: 'events' },
   ];
-  fieldFilter: { label: string; value: string }[] = [
+  protected fieldFilter: { label: string; value: string }[] = [
     { label: 'EventID', value: 'EventID' },
     { label: 'SEDOL', value: 'SEDOL' },
     { label: 'Position', value: 'position' },
     { label: 'Deadline', value: 'CADeadline' },
     { label: 'Stock Name', value: 'StockName' },
   ];
-  operatorFilter: { label: string; value: string }[] = [
+  protected operatorFilter: { label: string; value: string }[] = [
     { label: 'Contains', value: 'Contains' },
     { label: 'Equals', value: 'Equals' },
     { label: 'Starts with', value: 'Starts with' },
     { label: 'Ends with', value: 'Ends with' },
   ];
+  protected newPresetName: string = '';
+  protected showPresets: boolean = false;
+  protected showSaveInput: boolean = false;
+  protected presets: { name: string; filter: FilterCondition }[] = [];
+  protected role: string = '';
+
   constructor(
     private dataService: TableDataService,
-    private apiDataService: ApiDataService
+    private apiDataService: ApiDataService,
+    private auth: AuthService
   ) {}
 
   ngOnInit() {
     this.loadEvents();
+    this.role = this.auth.getRole() ?? '';
   }
 
   loadEvents() {
@@ -127,7 +149,7 @@ export class EventsComponent implements OnInit {
             };
           });
           // this.filteredEvents = this.events;
-        this.applyFilters();
+          this.filteredEvents = this.applyDefaultFilter(this.filterConditions);
         }
       },
       error: (err) => {
@@ -245,30 +267,58 @@ export class EventsComponent implements OnInit {
     window.open(link, '_blank');
   }
 
-  addFilter() {
-    this.filterConditions.push({
-      group: 'events',
-      field: 'EventID',
-      operator: 'Equals',
-      value: '',
-    });
-  }
-
   removeFilter(index: number) {
-    this.filterConditions.splice(index, 1);
-    this.applyFilters();
+    this.appliedCondition.splice(index, 1);
+    if (this.appliedCondition.length) {
+      this.filteredEvents = this.applyDefaultFilter(this.appliedCondition[0]);
+    } else {
+      this.filteredEvents = [...this.events];
+    }
   }
 
   resetFilters() {
     this.searchText = '';
-    this.filterConditions = [
-      { group: 'events', field: 'EventID', operator: 'Equals', value: '' },
-    ];
+    this.filterConditions = {
+      group: 'events',
+      field: 'EventID',
+      operator: 'Equals',
+      value: '',
+    };
     this.showFilters = false;
     this.applyFilters();
   }
 
   applyFilters() {
+    this.filteredEvents = this.applyDefaultFilter(this.filterConditions);
+    this.appliedCondition.unshift(this.filterConditions);
+    this.filterConditions = {
+      group: 'events',
+      field: 'EventID',
+      operator: 'Equals',
+      value: '',
+    };
+  }
+
+  protected showEventList(event: MatSlideToggleChange): void {
+    const isChecked = event.checked;
+    if (isChecked) {
+      this.filteredEvents = this.events;
+    } else {
+      this.filteredEvents = this.events.slice(0, 4);
+    }
+  }
+
+  protected addSelectedFilter(id: number): void {
+    if (this.appliedCondition.length) {
+      this.filteredEvents = this.applyDefaultFilter(this.appliedCondition[id]);
+    } else {
+      this.filteredEvents = [...this.events];
+    }
+  }
+
+  protected applyDefaultFilter(
+    filters: FilterCondition
+  ): CorporateActionEvent[] {
     let filtered = [...this.events];
 
     // Apply search text
@@ -285,30 +335,52 @@ export class EventsComponent implements OnInit {
     }
 
     // Apply filter conditions
-    this.filterConditions.forEach((condition) => {
-      if (condition.value) {
-        filtered = filtered.filter((event) => {
-          const fieldValue = String(
-            event[condition.field as keyof CorporateActionEvent] || ''
-          ).toLowerCase();
-          const filterValue = condition.value.toLowerCase();
+    if (filters.value) {
+      filtered = filtered.filter((event) => {
+        const fieldValue = String(
+          event[filters.field as keyof CorporateActionEvent] || ''
+        ).toLowerCase();
+        const filterValue = filters.value.toLowerCase();
 
-          switch (condition.operator) {
-            case 'contains':
-              return fieldValue.includes(filterValue);
-            case 'equals':
-              return fieldValue === filterValue;
-            case 'startsWith':
-              return fieldValue.startsWith(filterValue);
-            case 'endsWith':
-              return fieldValue.endsWith(filterValue);
-            default:
-              return true;
-          }
-        });
-      }
+        switch (filters.operator.toLowerCase()) {
+          case 'contains':
+            return fieldValue.includes(filterValue);
+          case 'equals':
+            return fieldValue === filterValue;
+          case 'startsWith':
+            return fieldValue.startsWith(filterValue);
+          case 'endsWith':
+            return fieldValue.endsWith(filterValue);
+          default:
+            return true;
+        }
+      });
+    }
+
+    return filtered;
+  }
+
+  protected deletePreset(id: number): void {
+    this.presets.splice(id, 1);
+  }
+  protected selectPresetFilter(id: number): void {
+    this.appliedCondition = [this.presets[id].filter];
+    this.addSelectedFilter(0);
+  }
+  protected togglePreset(): void {
+    this.showPresets = !this.showPresets;
+  }
+
+  protected savePreset(): void {
+    this.presets.push({
+      name: this.newPresetName,
+      filter: this.appliedCondition[0],
     });
-
-    this.filteredEvents = filtered;
+    this.showSaveInput = !this.showSaveInput;
+    this.newPresetName = '';
+  }
+  protected cancelSave(): void {
+    this.showSaveInput = !this.showSaveInput;
+    this.newPresetName = '';
   }
 }
