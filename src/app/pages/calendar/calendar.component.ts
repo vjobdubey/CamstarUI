@@ -33,6 +33,7 @@ import {
   parseISO,
 } from 'date-fns';
 import { ApiDataService } from '../../services/api-data-service';
+import { MatTableModule } from '@angular/material/table';
 
 type ViewType = 'month' | 'week' | 'day';
 
@@ -62,6 +63,7 @@ interface TimeSlot {
     MatButtonToggleModule,
     FormsModule,
     FontAwesomeModule,
+    MatTableModule
   ],
   templateUrl: './calendar.component.html',
   styleUrl: './calendar.component.scss',
@@ -90,6 +92,8 @@ export class CalendarComponent implements OnInit {
   faCalendarWeek = faCalendarWeek;
   faFilter = faFilter;
   faCalendarAlt = faCalendarAlt;
+
+  protected displayedColumns = ['EventID','CAType','StockName','CADeadline','Date2','ElectionStatus']
 
   constructor(
     private dataService: TableDataService,
@@ -317,10 +321,11 @@ export class CalendarComponent implements OnInit {
 
   isSelectedDate(date: Date): boolean {
     return !!(this.selectedDay?.date && isSameDay(this.selectedDay.date, date));
+  
   }
 
   selectDate(day: CalendarDay) {
-    this.selectedDay = day;
+    this.selectedDay = day; 
   }
 
   goToToday() {

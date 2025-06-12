@@ -9,7 +9,7 @@ const headers = new HttpHeaders({
   providedIn: 'root'
 })
 export class ApiDataService {
-  private readonly baseUrl = 'https://cors-anywhere.herokuapp.com/https://mock-t2z8.onrender.com'; 
+  private readonly baseUrl = 'https://mock-t2z8.onrender.com';  //https://cors-anywhere.herokuapp.com/
 
   constructor(private http: HttpClient) {}
 
